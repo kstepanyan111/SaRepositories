@@ -83,7 +83,7 @@ class MakeRepositoryModelFilterable extends GeneratorCommand
 
         $stub = str_replace(
             'DummyFilter',
-            class_basename("{$name}Filter"),
+            class_basename(str_plural($name) . "Filter"),
             $stub
         );
 

@@ -75,6 +75,7 @@ class MakeRepositoryEloquent extends GeneratorCommand
 
         $modelClassName = str_replace('Eloquent', '', class_basename($name));
         $modelClassName = str_replace('Repository', '', $modelClassName);
+        $modelClassName = str_singular($modelClassName);
 
         $stub = str_replace(
             'DummyModelClass',

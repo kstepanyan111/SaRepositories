@@ -31,8 +31,6 @@ interface RepositoryInterface
 
     public function makeModel();
 
-    public function saveSearchData($searchData, $dataType, $entity_type, $entity_id);
-
     public function getTablePrefix();
 
     public function filterPaginate(array $input = [], array $with = [], $paginationSize = 15);

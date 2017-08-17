@@ -37,17 +37,16 @@ class MakeRepository extends Command
      */
     public function handle()
     {
-        $name = $this->argument('name');
 
         /*
          * Remove Repository postfix if exist
          */
-        $name = str_ireplace('repository', '', $name);
+        $name = str_ireplace('repository', '', $this->argument('name'));
 
         /*
          * Class name
          */
-        $className = Str::studly(class_basename($this->argument('name')));
+        $className = Str::studly(class_basename($name));
 
         /*
          * Singular class name
@@ -68,14 +67,14 @@ class MakeRepository extends Command
          * Eloquent class
          */
         $this->call('make:repository-eloquent', [
-            'name' => $path . $name . '\\' . "Eloquent{$classNamePlural}Repository",
+            'name' => $path . $classNamePlural . '\\' . "Eloquent{$classNamePlural}Repository",
         ]);
 
         /*
          * Repository interface
          */
         $this->call('make:repository-interface', [
-            'name' => $path . $name . '\\' . "{$classNamePlural}Repository",
+            'name' => $path . $classNamePlural . '\\' . "{$classNamePlural}Repository",
         ]);
 
         if ($this->option('no-filter')) {
@@ -84,7 +83,7 @@ class MakeRepository extends Command
              * Model
              */
             $this->call('make:repository-model', [
-                'name' => $path . $name . '\\' . $classNameSingular,
+                'name' => $path . $classNamePlural . '\\' . $classNameSingular,
                 '-u' => $this->option('uuid'),
             ]);
         } else {
@@ -93,14 +92,14 @@ class MakeRepository extends Command
              * Filter class
              */
             $this->call('make:repository-filter', [
-                'name' => $path . $name . '\\' . "{$classNamePlural}Filter",
+                'name' => $path . $classNamePlural . '\\' . "{$classNamePlural}Filter",
             ]);
 
             /*
              * Model
              */
             $this->call('make:repository-model-filterable', [
-                'name' => $path . $name . '\\' . $classNameSingular,
+                'name' => $path . $classNamePlural . '\\' . $classNameSingular,
                 '-u' => $this->option('uuid'),
             ]);
         }
