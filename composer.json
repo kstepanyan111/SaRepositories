@@ -13,7 +13,7 @@
   "require": {},
   "autoload": {
     "psr-4": {
-      "Sa\\Repositories\\": "packages/sa/repositories/src"
+      "Sa\\Repositories\\": "src"
     }
   }
 }
