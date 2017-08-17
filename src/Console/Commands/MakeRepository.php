@@ -44,47 +44,63 @@ class MakeRepository extends Command
          */
         $name = str_ireplace('repository', '', $name);
 
-        $repository = Str::studly(class_basename($this->argument('name')));
+        /*
+         * Class name
+         */
+        $className = Str::studly(class_basename($this->argument('name')));
 
+        /*
+         * Singular class name
+         */
+        $classNameSingular = str_singular($className);
+
+        /*
+         * Plural class name
+         */
+        $classNamePlural = str_plural($className);
+
+        /*
+         * Repository class path
+         */
         $path = config('sa-repositories.path');
 
-        /**
+        /*
          * Eloquent class
          */
         $this->call('make:repository-eloquent', [
-            'name' => $path . $name . '\\' . "Eloquent{$repository}Repository",
+            'name' => $path . $name . '\\' . "Eloquent{$classNamePlural}Repository",
         ]);
 
-        /**
+        /*
          * Repository interface
          */
         $this->call('make:repository-interface', [
-            'name' => $path . $name . '\\' . "{$repository}Repository",
+            'name' => $path . $name . '\\' . "{$classNamePlural}Repository",
         ]);
 
         if ($this->option('no-filter')) {
 
-            /**
+            /*
              * Model
              */
             $this->call('make:repository-model', [
-                'name' => $path . $name . '\\' . $repository,
+                'name' => $path . $name . '\\' . $classNameSingular,
                 '-u' => $this->option('uuid'),
             ]);
         } else {
 
-            /**
+            /*
              * Filter class
              */
             $this->call('make:repository-filter', [
-                'name' => $path . $name . '\\' . "{$repository}Filter",
+                'name' => $path . $name . '\\' . "{$classNamePlural}Filter",
             ]);
 
-            /**
+            /*
              * Model
              */
             $this->call('make:repository-model-filterable', [
-                'name' => $path . $name . '\\' . $repository,
+                'name' => $path . $name . '\\' . $classNameSingular,
                 '-u' => $this->option('uuid'),
             ]);
         }
