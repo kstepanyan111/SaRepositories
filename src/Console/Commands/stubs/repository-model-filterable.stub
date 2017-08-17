@@ -1,0 +1,54 @@
+<?php
+
+namespace DummyNamespace;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use EloquentFilter\Filterable;
+use Emadadly\LaravelUuid\Uuids;
+
+class DummyClass extends Model
+{
+    use SoftDeletes;
+    use Filterable;
+    use Uuids;
+
+    /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'id';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = true;
+
+    /**
+     * Table name
+     *
+     * @var string
+     */
+    protected $table = "";
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [];
+
+    /**
+     * Model filter
+     *
+     * @return \EloquentFilter\ModelFilter
+     */
+    public function modelFilter()
+    {
+        return $this->provideFilter(DummyFilter::class);
+    }
+
+}

@@ -1,0 +1,24 @@
+<?php
+
+namespace DummyNamespace;
+
+use Sa\Repositories\Core\RepositoryAbstract;
+
+/**
+ * Description of DummyClass
+ *
+ */
+class DummyClass extends RepositoryAbstract implements DummyRepositoryInterface
+{
+
+    /**
+     * Get model name
+     *
+     * @return string
+     */
+    public function getModelName()
+    {
+        return DummyModelClass::class;
+    }
+
+}
