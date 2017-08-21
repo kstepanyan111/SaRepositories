@@ -209,7 +209,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
 
         return $this->model;
     }
-    
+
     /**
      * Get all records
      *
@@ -253,14 +253,6 @@ abstract class RepositoryAbstract implements RepositoryInterface
      */
     public function create(array $data)
     {
-        if (auth()->check()) {
-            $data[$this->getTablePrefix() . '_creator_id'] = auth()->user()->usr_id;
-        }
-
-        if ($company = \Context::get('company')->model()) {
-            $data[$this->getTablePrefix() . '_company_id'] = $company->cmp_id;
-        }
-
         $entity = $this->model->create($data);
 
         $this->resetModel();
@@ -281,10 +273,6 @@ abstract class RepositoryAbstract implements RepositoryInterface
 
         $data = $entity->fill($data)->toArray(true);
 
-        if (auth()->check()) {
-            $data[$this->getTablePrefix() . '_operator_id'] = auth()->user()->usr_id;
-        }
-
         /**
          * Array to json
          */
@@ -293,8 +281,6 @@ abstract class RepositoryAbstract implements RepositoryInterface
                 $data[$key] = json_encode($value);
             }
         }
-
-//        $query->withoutGlobalScopes([IsActiveScope::class]);
 
         $updated = $this->model->where($attribute, '=', $id)->update($data);
 
