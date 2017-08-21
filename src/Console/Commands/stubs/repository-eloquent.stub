@@ -16,7 +16,7 @@ class DummyClass extends RepositoryAbstract implements DummyRepositoryInterface
      *
      * @return string
      */
-    public function getModelName()
+    public function model()
     {
         return DummyModelClass::class;
     }

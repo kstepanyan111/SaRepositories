@@ -165,7 +165,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      */
     public function hidden(array $fields)
     {
-        $this->model->setHidden($fields);
+        $this->model = $this->model->setHidden($fields);
 
         return $this;
     }
@@ -179,7 +179,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      */
     public function visible(array $fields)
     {
-        $this->model->setVisible($fields);
+        $this->model = $this->model->setVisible($fields);
 
         return $this;
     }
@@ -192,7 +192,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      */
     public function withoutGlobalScopes(array $scopes = null)
     {
-        $this->model->withoutGlobalScopes($scopes);
+        $this->model = $this->model->withoutGlobalScopes($scopes);
 
         return $this;
     }
@@ -328,11 +328,6 @@ abstract class RepositoryAbstract implements RepositoryInterface
         $key = $this->getKeyName();
 
         foreach ($instance->whereIn($key, $ids)->get() as $model) {
-            if (auth()->check()) {
-                $data[$this->getTablePrefix() . '_operator_id'] = auth()->user()->usr_id;
-                $model->fill($data);
-            }
-
             if ($model->delete()) {
                 $count++;
             }
@@ -389,16 +384,6 @@ abstract class RepositoryAbstract implements RepositoryInterface
         }
 
         return $entity;
-    }
-
-    /**
-     * Get table prefix
-     *
-     * @return string
-     */
-    public function getTablePrefix()
-    {
-        return strtok($this->getKeyName(), '_');
     }
 
 }

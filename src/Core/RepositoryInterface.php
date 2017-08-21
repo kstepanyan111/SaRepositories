@@ -43,7 +43,5 @@ interface RepositoryInterface
 
     public function findByOrCreate($attribute, $value, $columns = ['*']);
 
-    public function filterPaginate(array $input = [], $paginationSize = 15);
-
-    public function filterGet(array $input = []);
+    public function filter(array $filters = []);
 }
