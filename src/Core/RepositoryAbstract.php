@@ -9,6 +9,7 @@ namespace Sa\Repositories\Core;
  */
 
 use Illuminate\Container\Container as App;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -42,15 +43,9 @@ abstract class RepositoryAbstract implements RepositoryInterface
     public function __construct(App $app)
     {
         $this->app = $app;
-        $this->makeQuery();
-    }
 
-    /**
-     * Specify Model class name
-     *
-     * @return mixed
-     */
-    abstract function getModelName();
+        $this->makeModel();
+    }
 
     /**
      * Get order directions list
@@ -68,48 +63,263 @@ abstract class RepositoryAbstract implements RepositoryInterface
     }
 
     /**
-     * @param array $columns
-     * @param array $with
+     * Specify Model class name
+     *
      * @return mixed
      */
-    public function all(array $with = [], $columns = array('*'))
+    abstract function model();
+
+    /**
+     * @return Model
+     *
+     * @throws RepositoryException
+     */
+    public function makeModel()
     {
-        return $this->model->with($with)->get($columns);
+        $this->model = $this->app->make($this->model());
+
+        if (!$this->model instanceof Model) {
+            throw new RepositoryException("Class {$this->model()} must be an instance of Illuminate\\Database\\Eloquent\\Model");
+        }
+
+        return $this->model;
     }
 
     /**
+     * Reset model
+     *
+     * @return Model
+     * @throws RepositoryException
+     */
+    public function resetModel()
+    {
+        return $this->makeModel();
+    }
+
+    /**
+     * Get model
+     *
+     * @return Model
+     */
+    public function getModel()
+    {
+        if ($this->model instanceof Model) {
+            return $this->model;
+        } elseif ($this->model instanceof Builder) {
+            return $this->model->getModel();
+        }
+
+        return $this->model;
+    }
+
+    /**
+     * Key table primary key name
+     *
+     * @return mixed
+     */
+    public function getKeyName()
+    {
+        if ($this->model instanceof Model) {
+            return $this->model->getKeyName();
+        } elseif ($this->model instanceof Builder) {
+            return $this->model->getModel()->getKeyName();
+        }
+
+        return 'id';
+    }
+
+    /**
+     * Load relations
+     *
+     * @param array|string $relations
+     *
+     * @return $this
+     */
+    public function with($relations)
+    {
+        $this->model = $this->model->with($relations);
+
+        return $this;
+    }
+
+    /**
+     * Order by
+     *
+     * @param $column
+     * @param string $direction
+     * @return $this
+     */
+    public function orderBy($column, $direction = 'asc')
+    {
+        $this->model = $this->model->orderBy($column, $direction);
+
+        return $this;
+    }
+
+    /**
+     * Set hidden fields
+     *
+     * @param array $fields
+     *
+     * @return $this
+     */
+    public function hidden(array $fields)
+    {
+        $this->model->setHidden($fields);
+
+        return $this;
+    }
+
+    /**
+     * Set visible fields
+     *
+     * @param array $fields
+     *
+     * @return $this
+     */
+    public function visible(array $fields)
+    {
+        $this->model->setVisible($fields);
+
+        return $this;
+    }
+
+    /**
+     * Remove global scopes
+     *
+     * @param array|null $scopes
+     * @return $this
+     */
+    public function withoutGlobalScopes(array $scopes = null)
+    {
+        $this->model->withoutGlobalScopes($scopes);
+
+        return $this;
+    }
+
+    /**
+     * Filter entities
+     *
+     * @param array $filters
+     * @return Model
+     */
+    public function filter(array $filters = [])
+    {
+        $this->model = $this->model->filter($filters);
+
+        return $this->model;
+    }
+    
+    /**
+     * Get all records
+     *
+     * @param array $columns
+     * @return mixed
+     */
+    public function all($columns = array('*'))
+    {
+        if ($this->model instanceof Builder) {
+            $results = $this->model->get($columns);
+        } else {
+            $results = $this->model->all($columns);
+        }
+
+        $this->resetModel();
+
+        return $results;
+    }
+
+    /**
+     * Paginate results
+     *
      * @param int $perPage
      * @param array $columns
      * @return mixed
      */
     public function paginate($perPage = 15, $columns = array('*'))
     {
-        return $this->model->paginate($perPage, $columns);
+        $results = $this->model->paginate($perPage, $columns);
+
+        $this->resetModel();
+
+        return $results;
     }
 
     /**
+     * Create new entity
+     *
      * @param array $data
      * @return mixed
      */
     public function create(array $data)
     {
-        return $this->model->create($data);
+        if (auth()->check()) {
+            $data[$this->getTablePrefix() . '_creator_id'] = auth()->user()->usr_id;
+        }
+
+        if ($company = \Context::get('company')->model()) {
+            $data[$this->getTablePrefix() . '_company_id'] = $company->cmp_id;
+        }
+
+        $entity = $this->model->create($data);
+
+        $this->resetModel();
+
+        return $entity;
     }
 
     /**
      * @param array $data
      * @param $id
      * @param string $attribute
-     * @param string $condition
      * @return mixed
      */
-    public function update(array $data, $id, $attribute = "id", $condition = '=')
+    public function update(array $data, $id, $attribute = "id")
     {
-        $query = $this->makeQuery();
 
-        $data = $this->makeModel()->fill($data)->toArray();
+        $entity = $this->app->make($this->model());
 
-        return $query->where($attribute, $condition, $id)->update($data);
+        $data = $entity->fill($data)->toArray(true);
+
+        if (auth()->check()) {
+            $data[$this->getTablePrefix() . '_operator_id'] = auth()->user()->usr_id;
+        }
+
+        /**
+         * Array to json
+         */
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = json_encode($value);
+            }
+        }
+
+//        $query->withoutGlobalScopes([IsActiveScope::class]);
+
+        $updated = $this->model->where($attribute, '=', $id)->update($data);
+
+        $this->resetModel();
+
+        return $updated;
+    }
+
+    /**
+     * Update or create new entity
+     *
+     * @param array $data
+     * @param $id
+     * @param string $attribute
+     * @return mixed
+     */
+    public function createOrUpdate(array $data, $id, $attribute = 'id')
+    {
+        if ((int)$id > 0) {
+            $this->update($data, $id, $attribute);
+
+            return $this->findBy($attribute, $id);
+        } else {
+            return $this->create($data);
+        }
     }
 
     /**
@@ -128,9 +338,15 @@ abstract class RepositoryAbstract implements RepositoryInterface
         // We will actually pull the models from the database table and call delete on
         // each of them individually so that their events get fired properly with a
         // correct set of attributes in case the developers wants to check these.
-        $key = with($instance = $this->makeModel())->getKeyName();
+        $instance = $this->model;
+        $key = $this->getKeyName();
 
         foreach ($instance->whereIn($key, $ids)->get() as $model) {
+            if (auth()->check()) {
+                $data[$this->getTablePrefix() . '_operator_id'] = auth()->user()->usr_id;
+                $model->fill($data);
+            }
+
             if ($model->delete()) {
                 $count++;
             }
@@ -140,90 +356,53 @@ abstract class RepositoryAbstract implements RepositoryInterface
     }
 
     /**
+     * Find record by id
+     *
      * @param $id
      * @param array $columns
-     * @param array $with
      * @return mixed
      */
-    public function find($id, $columns = array('*'), $with = [])
+    public function find($id, $columns = ['*'])
     {
-        return $this->model->with($with)->find($id, $columns);
+        $entity = $this->model->find($id, $columns);
+
+        $this->resetModel();
+
+        return $entity;
     }
 
     /**
-     * @param $attribute
-     * @param $value
-     * @param array $columns
-     * @return mixed
-     */
-    public function findBy($attribute, $value, $columns = array('*'))
-    {
-        return $this->model->where($attribute, '=', $value)->first($columns);
-    }
-
-    /**
-     * @param $attribute
-     * @param $value
-     * @param array $columns
-     * @return mixed
-     */
-    public function findByOrCreate($attribute, $value, $columns = array('*'))
-    {
-        $data = $this->model->where($attribute, '=', $value)->first($columns);
-
-        if (empty($data)) {
-            return $data = $this->model->create([$attribute => $value])->first($columns);
-        }
-
-        return $data;
-    }
-
-    /**
-     * @param $attribute
-     * @param $value
-     * @param array $columns
-     * @return mixed
-     */
-    public function findByOrNew($attribute, $value, $columns = array('*'))
-    {
-        $data = $this->model->where($attribute, '=', $value)->first($columns);
-
-        if (empty($data)) {
-            $data = $this->model->fill([$attribute => $value])->first($columns);
-        }
-
-        return $data;
-    }
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Builder
-     * @throws RepositoryException
-     */
-    public function makeQuery()
-    {
-        $model = $this->app->make($this->model());
-
-        if (!$model instanceof Model) {
-            throw new RepositoryException("Class {$this->model()} must be an instance of Illuminate\\Database\\Eloquent\\Model");
-        }
-
-        return $this->model = $model->newQuery();
-    }
-
-    /**
-     * @return Model
+     * Find record by criteria
      *
-     * @throws RepositoryException
+     * @param $attribute
+     * @param $value
+     * @param array $columns
+     * @return mixed
      */
-    public function makeModel()
+    public function findBy($attribute, $value, $columns = ['*'])
     {
-        $model = $this->app->make($this->model());
+        $entity = $this->model->where($attribute, '=', $value)->first($columns);
 
-        if (!$model instanceof Model) {
-            throw new RepositoryException("Class {$this->model()} must be an instance of Illuminate\\Database\\Eloquent\\Model");
+        $this->resetModel();
+
+        return $entity;
+    }
+
+    /**
+     * Find record by criteria Or create new
+     *
+     * @param $attribute
+     * @param $value
+     * @param array $columns
+     * @return mixed
+     */
+    public function findByOrCreate($attribute, $value, $columns = ['*'])
+    {
+        if (!$entity = $this->findBy($attribute, $value, $columns)) {
+            return $this->create([$attribute => $value]);
         }
 
-        return $model;
+        return $entity;
     }
 
     /**
@@ -233,82 +412,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      */
     public function getTablePrefix()
     {
-        return strtok($this->makeModel()->getKeyName(), '_');
-    }
-
-    /**
-     * Filter and paginate results
-     *
-     * @param array $input
-     * @param array $with
-     * @param int $paginationSize
-     * @return mixed
-     */
-    public function filterPaginate(array $input = [], array $with = [], $paginationSize = 15)
-    {
-        return $this->filter($input, $with)->paginate(!empty($input['limit']) ? (int)$input['limit'] : $paginationSize);
-    }
-
-    /**
-     * Filter and paginate results
-     *
-     * @param array $input
-     * @param array $with
-     * @return mixed
-     */
-    public function filterGet(array $input = [], array $with = [])
-    {
-        return $this->filter($input, $with)->get();
-    }
-
-    /**
-     * Filter entities
-     *
-     * @param array $input
-     * @param array $with
-     * @return Model
-     */
-    public function filter(array $input = [], array $with = [])
-    {
-        $orderColumns = getValue($input, 'order.col', $this->getTablePrefix() . '_created_at');
-
-        if (str_contains($orderColumns, ',')) {
-            $orderColumns = explode(',', $orderColumns);
-            $orderColumns = array_filter($orderColumns);
-            $orderColumns = array_map('trim', $orderColumns);
-        } else {
-            $orderColumns = [$orderColumns];
-        }
-
-        foreach ($orderColumns as $index => $orderColumn) {
-            if (!$this->makeModel()->isFillable($orderColumn)) {
-                unset($orderColumns[$index]);
-            }
-        }
-
-
-        if (empty($orderColumns)) {
-            $orderColumns = [$this->getTablePrefix() . '_created_at'];
-        }
-
-
-        $orderDirection = getValue($input, 'order.dir', static::ORDER_DESC);
-
-        if (!in_array(strtoupper($orderDirection), static::getOrderDirections())) {
-            $orderDirection = static::ORDER_DESC;
-        }
-
-        $filters = (array)getValue($input, 'filters', []);
-
-        $query = $this->makeQuery()
-            ->filter($filters)
-            ->with($with);
-
-        foreach ($orderColumns as $orderColumn) {
-            $query->orderBy($orderColumn, $orderDirection);
-        }
-
-        return $query;
+        return strtok($this->getKeyName(), '_');
     }
 
 }
