@@ -245,6 +245,23 @@ abstract class RepositoryAbstract implements RepositoryInterface
         return $results;
     }
 
+
+    /**
+     * Pluck columns
+     *
+     * @param $value
+     * @param null $key
+     * @return mixed
+     */
+    public function pluck($value, $key = null)
+    {
+        $results = $this->model->pluck($value, $key);
+
+        $this->resetModel();
+
+        return $results;
+    }
+
     /**
      * Create new entity
      *

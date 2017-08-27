@@ -31,6 +31,8 @@ interface RepositoryInterface
 
     public function paginate($perPage = 15, $columns = ['*']);
 
+    public function pluck($value, $key = null);
+
     public function create(array $data);
 
     public function update(array $data, $id, $attribute = "id");
