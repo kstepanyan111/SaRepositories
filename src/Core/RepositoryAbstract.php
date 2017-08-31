@@ -207,7 +207,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
     {
         $this->model = $this->model->filter($filters);
 
-        return $this->model;
+        return $this;
     }
 
     /**
