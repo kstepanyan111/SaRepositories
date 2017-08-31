@@ -201,7 +201,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      * Filter entities
      *
      * @param array $filters
-     * @return Model
+     * @return RepositoryAbstract
      */
     public function filter(array $filters = [])
     {
