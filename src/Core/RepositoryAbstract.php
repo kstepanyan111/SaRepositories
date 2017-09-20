@@ -2,12 +2,6 @@
 
 namespace Sa\Repositories\Core;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 use Illuminate\Container\Container as App;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Description of AbstractRepository
  *
- * @author maciek
+ * @author Sergii Akimov
  */
 abstract class RepositoryAbstract implements RepositoryInterface
 {
@@ -39,6 +33,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
     /**
      * RepositoryAbstract constructor.
      * @param App $app
+     * @throws RepositoryException
      */
     public function __construct(App $app)
     {
@@ -201,7 +196,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      * Filter entities
      *
      * @param array $filters
-     * @return RepositoryAbstract
+     * @return $this
      */
     public function filter(array $filters = [])
     {
@@ -215,6 +210,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      *
      * @param array $columns
      * @return mixed
+     * @throws RepositoryException
      */
     public function all($columns = array('*'))
     {
@@ -235,6 +231,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      * @param int $perPage
      * @param array $columns
      * @return mixed
+     * @throws RepositoryException
      */
     public function paginate($perPage = 15, $columns = array('*'))
     {
@@ -252,6 +249,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      * @param $value
      * @param null $key
      * @return mixed
+     * @throws RepositoryException
      */
     public function pluck($value, $key = null)
     {
@@ -267,6 +265,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      *
      * @param array $data
      * @return mixed
+     * @throws RepositoryException
      */
     public function create(array $data)
     {
@@ -278,28 +277,24 @@ abstract class RepositoryAbstract implements RepositoryInterface
     }
 
     /**
+     * Update entity
+     *
      * @param array $data
      * @param $id
      * @param string $attribute
      * @return mixed
+     * @throws RepositoryException
      */
     public function update(array $data, $id, $attribute = "id")
     {
+        $updated = 0;
 
-        $entity = $this->app->make($this->model());
+        foreach ($this->model->where($attribute, '=', $id)->get() as $entity) {
+            $entity->fill($data);
+            $entity->save();
 
-        $data = $entity->fill($data)->toArray(true);
-
-        /**
-         * Array to json
-         */
-        foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                $data[$key] = json_encode($value);
-            }
+            $updated++;
         }
-
-        $updated = $this->model->where($attribute, '=', $id)->update($data);
 
         $this->resetModel();
 
@@ -313,6 +308,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      * @param $id
      * @param string $attribute
      * @return mixed
+     * @throws RepositoryException
      */
     public function createOrUpdate(array $data, $id, $attribute = 'id')
     {
@@ -359,6 +355,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      * @param $id
      * @param array $columns
      * @return mixed
+     * @throws RepositoryException
      */
     public function find($id, $columns = ['*'])
     {
@@ -376,6 +373,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      * @param $value
      * @param array $columns
      * @return mixed
+     * @throws RepositoryException
      */
     public function findBy($attribute, $value, $columns = ['*'])
     {
@@ -393,6 +391,7 @@ abstract class RepositoryAbstract implements RepositoryInterface
      * @param $value
      * @param array $columns
      * @return mixed
+     * @throws RepositoryException
      */
     public function findByOrCreate($attribute, $value, $columns = ['*'])
     {

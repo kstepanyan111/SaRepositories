@@ -1,6 +1,6 @@
 {
   "name": "sa/repositories",
-  "description": "Repository patern for application",
+  "description": "Repository pattern for application",
   "type": "library",
   "license": "MIT",
   "authors": [
