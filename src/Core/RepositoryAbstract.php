@@ -138,6 +138,22 @@ abstract class RepositoryAbstract implements RepositoryInterface
     }
 
     /**
+     * Where has
+     *
+     * @param $relation
+     * @param \Closure|null $callback
+     * @param string $operator
+     * @param int $count
+     * @return $this
+     */
+    public function has($relation, \Closure $callback = null, $operator = '>=', $count = 1)
+    {
+        $this->model = $this->model->whereHas($relation, $callback, $operator, $count);
+
+        return $this;
+    }
+
+    /**
      * Order by
      *
      * @param $column
