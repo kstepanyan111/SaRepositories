@@ -21,6 +21,8 @@ interface RepositoryInterface
 
     public function has($relation, \Closure $callback = null, $operator = '>=', $count = 1);
 
+    public function limit($value);
+
     public function orderBy($column, $direction = 'asc');
 
     public function hidden(array $fields);

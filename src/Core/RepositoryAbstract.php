@@ -154,6 +154,19 @@ abstract class RepositoryAbstract implements RepositoryInterface
     }
 
     /**
+     * Limit records
+     *
+     * @param $value
+     * @return $this
+     */
+    public function limit($value)
+    {
+        $this->model = $this->model->limit($value);
+
+        return $this;
+    }
+
+    /**
      * Order by
      *
      * @param $column
