@@ -1,19 +1,18 @@
 {
-  "name": "sa/repositories",
-  "description": "Repository pattern for application",
+  "name": "karen/repositories",
+  "description": "Repository pattern for laravel",
   "type": "library",
   "license": "MIT",
   "authors": [
     {
-      "name": "Sergii Akimov",
-      "email": "akimov.sergii@gmail.com"
+      "name": "Karen Stepanyan",
+      "email": "kstepananyan@gmail.com"
     }
   ],
   "minimum-stability": "stable",
   "require": {},
   "autoload": {
     "psr-4": {
-      "Sa\\Repositories\\": "src"
+      "KS\\Repositories\\": "src"
     }
-  }
-}
+  
